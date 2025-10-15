@@ -123,10 +123,25 @@ def plot_accuracies(k_values, manual_accuracies, sklearn_accuracies):
 data = load_data("telescope_data.csv")
 balanced_data = balance_data(data)
 
-
-
+# Split data FIRST (before scaling)
 train = training_data_set(balanced_data)
 val = validation_data_set(balanced_data)
+test = test_data_set(balanced_data)
+
+print("Validation class distribution:")
+print(val['class'].value_counts())
+
+# NOW scale: fit on training data only, transform all sets
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+
+# Fit scaler on training data only
+scaler.fit(train.iloc[:, :-1])
+
+# Transform all sets using the same scaler
+train.iloc[:, :-1] = scaler.transform(train.iloc[:, :-1])
+val.iloc[:, :-1] = scaler.transform(val.iloc[:, :-1])
+test.iloc[:, :-1] = scaler.transform(test.iloc[:, :-1])
 
 # Try a range of k values
 k_values = range(1, 11)
@@ -143,8 +158,10 @@ for k in k_values:
 
 # Plot both accuracy curves
 plot_accuracies(k_values, manual_accuracies, sklearn_accuracies)
+
 # Final evaluation on test set with best k
 best_k = k_values[np.argmax(sklearn_accuracies)]
-test = test_data_set(balanced_data)
+print(f"\nTest class distribution:")
+print(test['class'].value_counts())
 final_accuracy = accuracy_sklearn(train, best_k, test)
 print(f"Final accuracy on test set with k={best_k}: {final_accuracy:.3f}")
