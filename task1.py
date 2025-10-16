@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
 def load_data(file_path):
-    data = pd.read_csv(file_path)
+    # index_col=0 tells pandas the first column is the index, not a feature
+    data = pd.read_csv(file_path, index_col=0)
     data = data.sample(frac=1, random_state=42).reset_index(drop=True)
     return data
 
