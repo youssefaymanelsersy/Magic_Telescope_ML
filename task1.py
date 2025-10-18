@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
 def load_data(file_path):
     # index_col=0 tells pandas the first column is the index, not a feature
@@ -151,10 +152,53 @@ for k in k_values:
 # Plot both accuracy curves
 plot_accuracies(k_values, manual_accuracies, sklearn_accuracies)
 
-# Final evaluation on test set with best k
 best_k_sklearn = k_values[np.argmax(sklearn_accuracies)]
 best_k_manual = k_values[np.argmax(manual_accuracies)]
 final_accuracy_sklearn = accuracy_sklearn(train, best_k_sklearn, test)
 final_accuracy_manual = accuracy_manual(train, best_k_manual, test)
 print(f"Final accuracy on test sklearn set with k={best_k_sklearn}: {final_accuracy_sklearn:.3f}")
 print(f"Final accuracy on test manual set with k={best_k_manual}: {final_accuracy_manual:.3f}")
+
+x_train = train.iloc[:, :-1].values
+y_train = train.iloc[:, -1].values
+x_test = test.iloc[:, :-1].values
+y_test = test.iloc[:, -1].values
+model = KNeighborsClassifier(n_neighbors=best_k_sklearn)
+model.fit(x_train, y_train)
+predictions = model.predict(x_test)
+accuracy = accuracy_score(y_test, predictions)
+precision = precision_score(y_test, predictions, pos_label='g')
+recall = recall_score(y_test, predictions, pos_label='g')
+f1 = f1_score(y_test, predictions, pos_label='g')
+conf_matrix = confusion_matrix(y_test, predictions)
+print(f"Sklearn KNN Detailed Metrics (k={best_k_sklearn}):")
+print(f"Accuracy: {accuracy:.3f}")
+print(f"Precision: {precision:.3f}")
+print(f"Recall: {recall:.3f}")
+print(f"F1 Score: {f1:.3f}")
+print("Confusion Matrix:")
+print(conf_matrix)
+
+correct = 0
+predictions_manual = []
+for test_sample, true_label in zip(x_test, y_test):
+    distances = np.sqrt(np.sum((x_train - test_sample)**2, axis=1))
+    k_idx = np.argsort(distances)[:best_k_manual]
+    k_labels = y_train[k_idx]
+    prediction = 'g' if np.sum(k_labels == 'g') > np.sum(k_labels == 'h') else 'h'
+    predictions_manual.append(prediction)
+    if prediction == true_label:
+        correct += 1
+accuracy_manual_final = correct / len(y_test)
+precision_manual = precision_score(y_test, predictions_manual, pos_label='g')
+recall_manual = recall_score(y_test, predictions_manual, pos_label='g')
+f1_manual = f1_score(y_test, predictions_manual, pos_label='g')
+conf_matrix_manual = confusion_matrix(y_test, predictions_manual)
+print(f"Manual KNN Detailed Metrics (k={best_k_manual}):")
+print(f"Accuracy: {accuracy_manual_final:.3f}")
+print(f"Precision: {precision_manual:.3f}")
+print(f"Recall: {recall_manual:.3f}")
+print(f"F1 Score: {f1_manual:.3f}")
+print("Confusion Matrix:")
+print(conf_matrix_manual)
+
